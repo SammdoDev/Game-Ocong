@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    <script src="sceneMenu.js"></script>
+    <script src="scenePlay.js"></script>
+  </head>
+  <body>
+
+  </script>
+    <script>
+        const config = {
+            type: Phaser.AUTO,
+            width: 1024,
+            height: 768,
+            scene: [ scenePlay],
+            physics: {
+                default: 'arcade',
+                arcade: {
+                    gravity: { y: 200 },
+                }
+            }
+        };
+
+        const game = new Phaser.Game(config);
+    </script>
+  </body>
+</html>
