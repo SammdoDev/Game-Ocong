@@ -1,3 +1,4 @@
+// Play Scene
 var scenePlay = new Phaser.Class({
     Extends: Phaser.Scene,
 
@@ -13,18 +14,33 @@ var scenePlay = new Phaser.Class({
         this.load.image('fg_loop', '/assets/images/fg_loop.png');
         this.load.image('obstacle', '/assets/images/obstacle.png'); 
         this.load.image('panel_skor', '/assets/images/panel_skor.png'); 
+        this.load.audio('snd_dead', '/assets/audio/dead.mp3'); 
+        this.load.audio('snd_klik_1', '/assets/audio/klik_1.mp3'); 
+        this.load.audio('snd_klik_2', '/assets/audio/klik_2.mp3'); 
+        this.load.audio('snd_klik_3', '/assets/audio/klik_3.mp3'); 
     },
 
     create: function () {
+        this.snd_dead = this.sound.add('snd_dead');
+
+        this.snd_click = [];
+        this.snd_click.push(this.sound.add('snd_klik_1'));
+        this.snd_click.push(this.sound.add('snd_klik_2'));
+        this.snd_click.push(this.sound.add('snd_klik_3'));
+
+        for(let i = 0; i < this.snd_click.length; i++){
+            this.snd_click[i].setVolume(0.5);
+        }
+
         // Inisialisasi score
         this.score = 0;
 
         // Tambahkan panel skor - pindahkan ke posisi yang lebih terlihat
-        this.panel_skor = this.add.image(120, 80, 'panel_skor');
+        this.panel_skor = this.add.image(180, 50, 'panel_skor');
         this.panel_skor.setDepth(10);
 
         // Tambahkan text skor - pastikan warnanya kontras dengan panel
-        this.label_score = this.add.text(120, 80, this.score, {
+        this.label_score = this.add.text(100, 50, this.score, {
             font: '32px Arial',
             fill: '#ffffff',
             align: 'center'
@@ -42,6 +58,7 @@ var scenePlay = new Phaser.Class({
         this.moveUp = false;
         this.moveDown = false;
         this.moveSpeed = 10; // Kecepatan gerak karakter
+        this.flyingSpeed = 3; // Kecepatan karakter terbang ke atas secara otomatis
 
         this.chara = this.add.image(130, 768/2, 'chara');
         this.chara.setDepth(5);
@@ -78,9 +95,15 @@ var scenePlay = new Phaser.Class({
             }
         }, this);
 
-        this.input.on('pointerup', function() {
+        this.input.on('pointerup', function(pointer, currentlyOver) {
+            if(!this.isGameRunning) return;
+            
+            // Reset movement flags
             this.moveUp = false;
             this.moveDown = false;
+            
+            // Play random click sound
+            this.snd_click[Math.floor(Math.random() * this.snd_click.length)].play();
         }, this);
 
         this.background = [];
@@ -154,14 +177,32 @@ var scenePlay = new Phaser.Class({
         }
     },
 
+    // Define gameOver method properly outside the update method
+    gameOver: function() {
+        console.log("Game Over function called");
+        
+        // Save high score to local storage
+        var highScore = localStorage.getItem('highScore') || 0;
+        if (this.score > highScore) {
+            localStorage.setItem('highScore', this.score);
+            console.log("New high score saved:", this.score);
+        }
+        
+        // Return to menu scene
+        this.scene.start('sceneMenu');
+    },
+
     update: function () {
         if(this.isGameRunning){
+            // Karakter terus terbang ke atas secara otomatis
+            this.chara.y -= this.flyingSpeed;
+            
             // Ganti pergerakan otomatis dengan input kontrol
             if (this.cursors.up.isDown || this.moveUp) {
-                this.chara.y -= this.moveSpeed;
+                this.chara.y -= this.moveSpeed; // Bergerak lebih cepat ke atas
             } 
             else if (this.cursors.down.isDown || this.moveDown) {
-                this.chara.y += this.moveSpeed;
+                this.chara.y += this.moveSpeed + this.flyingSpeed; // Bergerak ke bawah, melawan gravitasi
             }
 
             // Batasi posisi karakter agar tidak keluar layar
@@ -179,9 +220,53 @@ var scenePlay = new Phaser.Class({
                 }
             }
 
+            // Create and update obstacles
             this.createHalangan();
             this.updateHalangan();
             this.checkCollision();
+            
+            // Check for collisions with obstacles
+            for(let i = this.halangan.length - 1; i >= 0; i--) {
+                // Use Phaser's built-in intersection method for better collision detection
+                if(Phaser.Geom.Intersects.RectangleToRectangle(
+                    this.chara.getBounds(),
+                    this.halangan[i].getBounds()
+                )) {
+                    console.log("Collision detected!");
+                    
+                    // Mark obstacle as inactive
+                    this.halangan[i].setData("status_aktif", false);
+                    
+                    // Stop the game
+                    this.isGameRunning = false;
+
+                    this.snd_dead.play();
+                    
+                    // Stop any existing tweens on character
+                    if(this.charaTweens != null) {
+                        this.charaTweens.stop();
+                    }
+                    
+                    // Store reference to 'this' for use in the callback
+                    var self = this;
+                    
+                    // Start scaling down animation
+                    this.tweens.add({
+                        targets: this.chara,
+                        ease: 'Back.easeIn',
+                        duration: 750,
+                        delay: 250,
+                        scaleX: 0,
+                        scaleY: 0,
+                        onComplete: function() {
+                            // Call the gameOver method with proper context
+                            self.gameOver();
+                        }
+                    });
+                    
+                    break;
+                }
+            }
         }
     }
 });

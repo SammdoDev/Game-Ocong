@@ -9,20 +9,24 @@
 
   </script>
     <script>
-        const config = {
-            type: Phaser.AUTO,
-            width: 1024,
-            height: 768,
-            scene: [ scenePlay],
-            physics: {
-                default: 'arcade',
-                arcade: {
-                    gravity: { y: 200 },
-                }
-            }
-        };
+// Game configuration
+var config = {
+    type: Phaser.AUTO,
+    width: 1024,
+    height: 768,
+    parent: 'game-container',
+    physics: {
+        default: 'arcade',
+        arcade: {
+            gravity: { y: 0 },
+            debug: false
+        }
+    },
+    scene: [sceneMenu, scenePlay]
+};
 
-        const game = new Phaser.Game(config);
+// Create the game instance
+var game = new Phaser.Game(config);
     </script>
   </body>
 </html>
