@@ -23,6 +23,7 @@ var scenePlay = new Phaser.Class({
         this.load.image('fg_loop', '/assets/images/fg_loop.png');
         this.load.image('obstacle', '/assets/images/obstacle.png'); 
         this.load.image('panel_skor', '/assets/images/panel_skor.png'); 
+        this.load.image('fullscreen_icon', '/assets/images/expand-arrows-alt.svg'); // Add fullscreen icon
         this.load.audio('snd_dead', '/assets/audio/dead.mp3'); 
         this.load.audio('snd_klik_1', '/assets/audio/klik_1.mp3'); 
         this.load.audio('snd_klik_2', '/assets/audio/klik_2.mp3'); 
@@ -56,6 +57,26 @@ var scenePlay = new Phaser.Class({
         });
         this.label_score.setOrigin(0.5);
         this.label_score.setDepth(11);
+        
+        // Add fullscreen button
+        this.fullscreenButton = this.add.image(this.screenWidth - 50, 50, 'fullscreen_icon')
+            .setInteractive()
+            .setDepth(20)
+            .setScale(0.4);
+        
+        // Add hover effect
+        this.fullscreenButton.on('pointerover', function() {
+            this.setTint(0xcccccc);
+        });
+        
+        this.fullscreenButton.on('pointerout', function() {
+            this.clearTint();
+        });
+        
+        // Toggle fullscreen on click
+        this.fullscreenButton.on('pointerdown', function() {
+            this.toggleFullscreen();
+        }, this);
 
         // Debugging untuk memastikan panel terlihat
         console.log("Panel skor dibuat di posisi:", this.panel_skor.x, this.panel_skor.y);
@@ -133,6 +154,52 @@ var scenePlay = new Phaser.Class({
             this.background.push(bg_awal);
 
             bg_x += 1366;
+        }
+    },
+    
+    // Fullscreen toggle helper function
+    toggleFullscreen: function() {
+        if (!document.fullscreenElement && // Standard browser API
+            !document.mozFullScreenElement && 
+            !document.webkitFullscreenElement && 
+            !document.msFullscreenElement) {
+            
+            // Request fullscreen based on browser support
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen();
+            } else if (document.documentElement.msRequestFullscreen) {
+                document.documentElement.msRequestFullscreen();
+            } else if (document.documentElement.mozRequestFullScreen) {
+                document.documentElement.mozRequestFullScreen();
+            } else if (document.documentElement.webkitRequestFullscreen) {
+                document.documentElement.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
+            }
+            
+            // If Phaser's scale manager is available, use it too
+            if (this.scale && this.scale.startFullscreen) {
+                this.scale.startFullscreen();
+            }
+            
+            console.log("Entering fullscreen mode");
+            
+        } else {
+            // Exit fullscreen based on browser support
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            } else if (document.mozCancelFullScreen) {
+                document.mozCancelFullScreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            }
+            
+            // If Phaser's scale manager is available, use it too
+            if (this.scale && this.scale.stopFullscreen) {
+                this.scale.stopFullscreen();
+            }
+            
+            console.log("Exiting fullscreen mode");
         }
     },
     
@@ -494,7 +561,6 @@ var scenePlay = new Phaser.Class({
     }
 });
 
-// Make sure your main game config has responsive scaling
 // Add this to your main game configuration if not already present:
 /*
 var config = {
@@ -503,7 +569,11 @@ var config = {
         mode: Phaser.Scale.RESIZE,
         autoCenter: Phaser.Scale.CENTER_BOTH,
         width: window.innerWidth,
-        height: window.innerHeight
+        height: window.innerHeight,
+        fullscreenTarget: document.body // Element to be used for fullscreen
+    },
+    dom: {
+        createContainer: true // Required for some fullscreen features
     }
 };
 */
