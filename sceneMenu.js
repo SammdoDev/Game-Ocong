@@ -62,22 +62,7 @@ var sceneMenu = new Phaser.Class({
         if (highScore == 0) {
             this.highScoreText.setText('0');
         }
-        
-        this.centeredHighScoreText = this.add.text(1024 / 2, 768 / 2 - 100, '', {
-            font: 'bold 24px Arial',
-            fill: '#FFFFFF',
-            stroke: '#000000',
-            strokeThickness: 3,
-            align: 'center'
-        });
-        this.centeredHighScoreText.setOrigin(0.5, 0.5);
-        this.centeredHighScoreText.setDepth(6);
-        
-        if (highScore == 0) {
-            this.centeredHighScoreText.setText('Belum ada High Score');
-        } else {
-            this.centeredHighScoreText.setText('');
-        }
+
         
         this.titleGame.y -= 384;
         

@@ -6,7 +6,16 @@ var scenePlay = new Phaser.Class({
         Phaser.Scene.call(this, { key: "scenePlay" });
     },
 
-    init: function () {},
+    init: function () {
+        // Detect if on mobile device
+        this.isMobile = this.sys.game.device.os.android || 
+                         this.sys.game.device.os.iOS ||
+                         this.sys.game.device.os.windowsPhone;
+        
+        // Store screen dimensions
+        this.screenWidth = this.sys.game.config.width;
+        this.screenHeight = this.sys.game.config.height;
+    },
 
     preload() {
         this.load.image('chara', '/assets/images/chara.png');
@@ -75,36 +84,34 @@ var scenePlay = new Phaser.Class({
             scaleY: 1,
             onComplete: function () {
                myScene.isGameRunning = true;
+               
+               // Show mobile instructions if on mobile
+               if (myScene.isMobile) {
+                   myScene.showMobileInstructions();
+               }
             }
         });
 
         // Kontrol keyboard untuk gerakan yang lebih baik
         this.cursors = this.input.keyboard.createCursorKeys();
 
-        // Kontrol mouse/touch
-        this.input.on('pointerdown', function(pointer) {
-            // Jika klik di bagian atas karakter, gerak ke atas
-            if (pointer.y < this.chara.y) {
-                this.moveUp = true;
-                this.moveDown = false;
-            } 
-            // Jika klik di bagian bawah karakter, gerak ke bawah
-            else {
-                this.moveUp = false;
-                this.moveDown = true;
-            }
-        }, this);
-
-        this.input.on('pointerup', function(pointer, currentlyOver) {
-            if(!this.isGameRunning) return;
+        // ============== MOBILE CONTROLS START ================
+        if (this.isMobile) {
+            // For mobile: Setup touch zones for better control
+            this.setupMobileControls();
             
-            // Reset movement flags
-            this.moveUp = false;
-            this.moveDown = false;
+            // Add orientation change handler
+            window.addEventListener('orientationchange', () => {
+                this.checkOrientation();
+            });
             
-            // Play random click sound
-            this.snd_click[Math.floor(Math.random() * this.snd_click.length)].play();
-        }, this);
+            // Initial orientation check
+            this.checkOrientation();
+        } else {
+            // Original mouse/touch controls for non-mobile
+            this.setupOriginalControls();
+        }
+        // ============== MOBILE CONTROLS END ================
 
         this.background = [];
 
@@ -128,6 +135,214 @@ var scenePlay = new Phaser.Class({
             bg_x += 1366;
         }
     },
+    
+    // ================ MOBILE METHODS START ===================
+    setupMobileControls: function() {
+        // Create invisible touch zones for up and down controls
+        this.upZone = this.add.zone(0, 0, this.screenWidth, this.screenHeight * 0.5)
+            .setOrigin(0)
+            .setInteractive();
+            
+        this.downZone = this.add.zone(0, this.screenHeight * 0.5, this.screenWidth, this.screenHeight * 0.5)
+            .setOrigin(0)
+            .setInteractive();
+        
+        // Setup swipe detection properties
+        this.swipeCoordX = 0;
+        this.swipeCoordY = 0;
+        this.isSwipe = false;
+        this.swipeThreshold = 30;
+        
+        // Touch events for upZone - move character up
+        this.upZone.on('pointerdown', () => {
+            if (!this.isGameRunning) return;
+            this.moveUp = true;
+            this.moveDown = false;
+            
+            // Start swipe tracking
+            this.startSwipe(this.input.activePointer);
+        });
+        
+        // Touch events for downZone - move character down
+        this.downZone.on('pointerdown', () => {
+            if (!this.isGameRunning) return;
+            this.moveUp = false;
+            this.moveDown = true;
+            
+            // Start swipe tracking
+            this.startSwipe(this.input.activePointer);
+        });
+        
+        // Global touch move event for swipe detection
+        this.input.on('pointermove', this.moveSwipe, this);
+        
+        // Global touch end event
+        this.input.on('pointerup', () => {
+            if (!this.isGameRunning) return;
+            
+            // Reset movement
+            this.moveUp = false;
+            this.moveDown = false;
+            this.isSwipe = false;
+            
+            // Play sound
+            if (this.snd_click.length > 0) {
+                this.snd_click[Math.floor(Math.random() * this.snd_click.length)].play();
+            }
+        });
+        
+        console.log("Mobile controls set up");
+    },
+    
+    setupOriginalControls: function() {
+        // Kontrol mouse/touch original
+        this.input.on('pointerdown', function(pointer) {
+            // Jika klik di bagian atas karakter, gerak ke atas
+            if (pointer.y < this.chara.y) {
+                this.moveUp = true;
+                this.moveDown = false;
+            } 
+            // Jika klik di bagian bawah karakter, gerak ke bawah
+            else {
+                this.moveUp = false;
+                this.moveDown = true;
+            }
+        }, this);
+
+        this.input.on('pointerup', function(pointer, currentlyOver) {
+            if(!this.isGameRunning) return;
+            
+            // Reset movement flags
+            this.moveUp = false;
+            this.moveDown = false;
+            
+            // Play random click sound
+            this.snd_click[Math.floor(Math.random() * this.snd_click.length)].play();
+        }, this);
+    },
+    
+    // Swipe handling methods
+    startSwipe: function(pointer) {
+        this.swipeCoordX = pointer.x;
+        this.swipeCoordY = pointer.y;
+        this.isSwipe = true;
+    },
+    
+    moveSwipe: function(pointer) {
+        if (!this.isSwipe || !this.isMobile) return;
+        
+        // Calculate swipe distance
+        let swipeDistY = pointer.y - this.swipeCoordY;
+        
+        // Detect significant vertical swipe
+        if (Math.abs(swipeDistY) > this.swipeThreshold) {
+            if (swipeDistY < 0) {
+                // Swipe up - stronger upward movement
+                this.moveUp = true;
+                this.moveDown = false;
+            } else {
+                // Swipe down - stronger downward movement
+                this.moveUp = false;
+                this.moveDown = true;
+            }
+            
+            // Update start position for continued swiping
+            this.swipeCoordY = pointer.y;
+        }
+    },
+    
+    // Check device orientation and show warning if needed (mobile only)
+    checkOrientation: function() {
+        if (!this.isMobile) return;
+        
+        // For mobile, recommend landscape mode
+        if (window.orientation === 0 || window.orientation === 180) { // Portrait
+            this.showOrientationWarning();
+        } else {
+            this.hideOrientationWarning();
+        }
+    },
+    
+    // Show orientation warning
+    showOrientationWarning: function() {
+        if (!this.orientationOverlay) {
+            // Pause game while in wrong orientation
+            this.isPaused = true;
+            
+            // Add overlay
+            this.orientationOverlay = this.add.rectangle(
+                this.screenWidth/2, 
+                this.screenHeight/2, 
+                this.screenWidth, 
+                this.screenHeight, 
+                0x000000, 
+                0.8
+            );
+            this.orientationOverlay.setDepth(30);
+            
+            // Add text
+            this.orientationText = this.add.text(
+                this.screenWidth/2, 
+                this.screenHeight/2, 
+                'PLEASE ROTATE\nYOUR DEVICE', 
+                {
+                    font: '32px Arial',
+                    fill: '#ffffff',
+                    align: 'center'
+                }
+            ).setOrigin(0.5).setDepth(31);
+        }
+    },
+    
+    // Hide orientation warning
+    hideOrientationWarning: function() {
+        if (this.orientationOverlay) {
+            this.orientationOverlay.destroy();
+            this.orientationText.destroy();
+            this.orientationOverlay = null;
+            this.orientationText = null;
+            
+            // Resume game
+            this.isPaused = false;
+        }
+    },
+    
+    // Show mobile control instructions
+    showMobileInstructions: function() {
+        // Instructions for mobile users
+        this.instructionText = this.add.text(
+            this.screenWidth/2, 
+            this.screenHeight/2, 
+            'TAP TOP HALF: UP\nTAP BOTTOM HALF: DOWN',
+            {
+                font: '28px Arial',
+                fill: '#ffffff',
+                stroke: '#000000',
+                strokeThickness: 4,
+                align: 'center'
+            }
+        ).setOrigin(0.5).setDepth(20);
+        
+        // Fade out after a few seconds
+        this.tweens.add({
+            targets: this.instructionText,
+            alpha: 0,
+            duration: 1000,
+            delay: 3000,
+            onComplete: () => {
+                if (this.instructionText) this.instructionText.destroy();
+            }
+        });
+    },
+    
+    // Mobile-specific game over feedback
+    mobileFeedback: function() {
+        // Vibrate device if supported (mobile feedback)
+        if (navigator.vibrate) {
+            navigator.vibrate(200);
+        }
+    },
+    // ================ MOBILE METHODS END ===================
 
     createHalangan: function() {
         if(this.timerHalangan <= 0) {
@@ -181,6 +396,11 @@ var scenePlay = new Phaser.Class({
     gameOver: function() {
         console.log("Game Over function called");
         
+        // Add mobile-specific feedback
+        if (this.isMobile) {
+            this.mobileFeedback();
+        }
+        
         // Save high score to local storage
         var highScore = localStorage.getItem('highScore') || 0;
         if (this.score > highScore) {
@@ -193,6 +413,9 @@ var scenePlay = new Phaser.Class({
     },
 
     update: function () {
+        // Skip update if paused (for orientation warnings)
+        if (this.isPaused) return;
+        
         if(this.isGameRunning){
             // Karakter terus terbang ke atas secara otomatis
             this.chara.y -= this.flyingSpeed;
@@ -270,3 +493,17 @@ var scenePlay = new Phaser.Class({
         }
     }
 });
+
+// Make sure your main game config has responsive scaling
+// Add this to your main game configuration if not already present:
+/*
+var config = {
+    // ... your other config ...
+    scale: {
+        mode: Phaser.Scale.RESIZE,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+        width: window.innerWidth,
+        height: window.innerHeight
+    }
+};
+*/
