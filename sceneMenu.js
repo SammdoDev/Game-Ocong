@@ -10,21 +10,24 @@ var sceneMenu = new Phaser.Class({
         this.load.image('btn_play', '/assets/images/btn_play.png');
         this.load.image('title_game', '/assets/images/title_game.png');
         this.load.image('panel_skor', '/assets/images/panel_skor.png');
-        
-        // Load ambience sound
         this.load.audio('snd_ambience', '/assets/audio/ambience.mp3');
+        this.load.audio('snd_touch', '/assets/audio/touch.mp3');
+        this.load.audio('snd_transisi_menu', '/assets/audio/transisi_menu.mp3');
+        this.load.spritesheet('sps_mummy', 'assets/sprite/mummy37x45.png', { frameWidth: 37, frameHeight: 45 });
     },
     
     create() {
         var btnClicked = false;
         
-        // Add ambience background sound
         if(!this.sound.get('snd_ambience')) {
             this.snd_ambience = this.sound.add('snd_ambience');
             this.snd_ambience.loop = true;
             this.snd_ambience.setVolume(0.35);
             this.snd_ambience.play();
         }
+
+        this.snd_touch = this.sound.add('snd_touch');
+        var snd_transisi = this.sound.add('snd_transisi_menu');
         
         this.add.image(1024 / 2, 768 / 2, 'bg_start');
         var btnPlay = this.add.image(1024 / 2, 768 / 2 + 75, 'btn_play');
@@ -46,7 +49,6 @@ var sceneMenu = new Phaser.Class({
         this.highScoreLabel.setOrigin(0.5, 0.5);
         this.highScoreLabel.setDepth(6);
         
-        // Add high score value
         this.highScoreText = this.add.text(250, 50, highScore.toString(), {
             font: 'bold 24px Arial',
             fill: '#FFFFFF',
@@ -61,8 +63,20 @@ var sceneMenu = new Phaser.Class({
             this.highScoreText.setText('0');
         }
         
+        this.centeredHighScoreText = this.add.text(1024 / 2, 768 / 2 - 100, '', {
+            font: 'bold 24px Arial',
+            fill: '#FFFFFF',
+            stroke: '#000000',
+            strokeThickness: 3,
+            align: 'center'
+        });
+        this.centeredHighScoreText.setOrigin(0.5, 0.5);
+        this.centeredHighScoreText.setDepth(6);
+        
         if (highScore == 0) {
             this.centeredHighScoreText.setText('Belum ada High Score');
+        } else {
+            this.centeredHighScoreText.setText('');
         }
         
         this.titleGame.y -= 384;
@@ -72,7 +86,10 @@ var sceneMenu = new Phaser.Class({
             ease: 'Bounce.easeOut',
             duration: 750,
             delay: 250,
-            y: 200
+            y: 200,
+            onComplete: function () {
+                snd_transisi.play();
+            }
         });
         
         btnPlay.setScale(0);
@@ -99,42 +116,52 @@ var sceneMenu = new Phaser.Class({
         
         this.input.on('gameobjectover', function (pointer, gameObject) {
             console.log('scenemenu | Object Over');
-            if (!btnClicked) return;
             if (gameObject == btnPlay) {
-                btnPlay.setTint(0xffff00); // Ubah warna saat hover
+                btnPlay.setTint(0xffff00);
             }
         }, this);
         
         this.input.on('gameobjectout', function (pointer, gameObject) {
             console.log('scenemenu | Object Out');
-            if (!btnClicked) return;
             if (gameObject == btnPlay) {
-                btnPlay.setTint(0xffffff); // Kembalikan warna normal
+                btnPlay.setTint(0xffffff);
             }
         }, this);
         
         this.input.on('gameobjectdown', function (pointer, gameObject) {
             console.log('scenemenu | Object Click');
             if (gameObject == btnPlay) {
-                btnPlay.setTint(0xdddddd); // Ubah warna saat diklik
-                btnClicked = true; // Gunakan = bukan ==
+                btnPlay.setTint(0xdddddd);
+                btnClicked = true; 
             }
         }, this);
         
         this.input.on('gameobjectup', function (pointer, gameObject) {
             console.log('sceneMenu | Object End Click');
-            if (gameObject == btnPlay) {
+            if (gameObject == btnPlay && btnClicked) {
                 btnPlay.setTint(0xffffff);
                 this.scene.start('scenePlay');
+                this.snd_touch.play();
+                btnClicked = false;
             }
         }, this);
         
         this.input.on('pointerup', function (pointer, gameObject) {
             console.log('scenemenu | Mouse Up');
-            btnClicked = false; // Gunakan = bukan ==
+            btnClicked = false;
         }, this);
         
         btnPlay.setInteractive();
+
+        this.anims.create({
+            key: 'walk',
+            frames: this.anims.generateFrameNumbers('sps_mummy'),
+            frameRate: 16,
+            repeat: -1
+        });
+
+        const sprite = this.add.sprite(70, 768/2 + 150, 'sps_mummy').setScale(4).setDepth(10);
+        sprite.play('walk'); 
     },
     
     update() {}
