@@ -6,13 +6,13 @@ var sceneMenu = new Phaser.Class({
     },
     init() {},
     preload() {
-        this.load.image('bg_start', '/assets/images/bg_start.png');
-        this.load.image('btn_play', '/assets/images/btn_play.png');
-        this.load.image('title_game', '/assets/images/title_game.png');
-        this.load.image('panel_skor', '/assets/images/panel_skor.png');
-        this.load.audio('snd_ambience', '/assets/audio/ambience.mp3');
-        this.load.audio('snd_touch', '/assets/audio/touch.mp3');
-        this.load.audio('snd_transisi_menu', '/assets/audio/transisi_menu.mp3');
+        this.load.image('bg_start', 'assets/images/bg_start.png');
+        this.load.image('btn_play', 'assets/images/btn_play.png');
+        this.load.image('title_game', 'assets/images/title_game.png');
+        this.load.image('panel_skor', 'assets/images/panel_skor.png');
+        this.load.audio('snd_ambience', 'assets/audio/ambience.mp3');
+        this.load.audio('snd_touch', 'assets/audio/touch.mp3');
+        this.load.audio('snd_transisi_menu', 'assets/audio/transisi_menu.mp3');
         this.load.spritesheet('sps_mummy', 'assets/sprite/mummy37x45.png', { frameWidth: 37, frameHeight: 45 });
     },
     

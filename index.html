@@ -1,46 +1,85 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Ocong 2</title>
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
-    <script>
-      var snd_ambience = null;
-    </script>
-    <script src="sceneMenu.js"></script>
-    <script src="scenePlay.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.70.0/phaser.min.js"></script>
     <style>
-      body {
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-        background: #000;
-      }
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #000;
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            display: block;
+            margin: 0 auto;
+            max-width: 100vw;
+            max-height: 100vh;
+        }
+        #game-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
     </style>
-  </head>
-  <body>
+</head>
+<body>
     <!-- Tempat game ditampilkan -->
     <div id="game-container"></div>
-
+    
     <script>
-      // Game configuration
-      var config = {
-        type: Phaser.AUTO,
-        width: 1024,
-        height: 768,
-        parent: 'game-container',
-        physics: {
-          default: 'arcade',
-          arcade: {
-            gravity: { y: 0 },
-            debug: false
-          }
-        },
-        scene: [sceneMenu, scenePlay]
-      };
-
-      // Create the game instance
-      var game = new Phaser.Game(config);
+        // Global game storage (mengganti localStorage)
+        var gameStorage = {
+            highScore: 0
+        };
+        
+        // Global sound variable
+        var snd_ambience = null;
     </script>
-  </body>
+    
+    <!-- Load scene files -->
+    <script src="sceneMenu.js"></script>
+    <script src="scenePlay.js"></script>
+    
+    <script>
+        // Game configuration
+        var config = {
+            type: Phaser.AUTO,
+            width: 1024,
+            height: 768,
+            parent: 'game-container',
+            scale: {
+                mode: Phaser.Scale.FIT,
+                autoCenter: Phaser.Scale.CENTER_BOTH,
+                width: 1024,
+                height: 768
+            },
+            physics: {
+                default: 'arcade',
+                arcade: {
+                    gravity: { y: 0 },
+                    debug: false
+                }
+            },
+            scene: [sceneMenu, scenePlay]
+        };
+        
+        // Create the game instance
+        var game = new Phaser.Game(config);
+    </script>
+</body>
 </html>
