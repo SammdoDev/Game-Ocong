@@ -33,5 +33,3 @@ Pemain mengontrol karakter Ocong untuk **menghindari kristal** yang datang dari 
 - Jika tertabrak kristal → Game Over
 
 ---
-
-## 🧱 Struktur Proyek
